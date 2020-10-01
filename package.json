@@ -4,11 +4,11 @@
   "description": "Utils to work with iden3 binary files.",
   "type": "module",
   "exports": {
-    "import": "./src/bigarray.js",
+    "import": "./src/binfileutils.js",
     "require": "./build/main.cjs"
   },
   "main": "./build/main.cjs",
-  "module": "./src/bigarray.js",
+  "module": "./src/binfileutils.js",
   "scripts": {
     "test": "mocha",
     "build": "rollup -c rollup.cjs.config.js"
@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "fastfile": "0.0.18",
-    "ffjavascript": "^0.2.22"
+    "ffjavascript": "^0.2.23"
   }
 }
