@@ -1,5 +1,5 @@
 
-import  { Scalar } from "ffjavascript";
+import  { Scalar, BigBuffer } from "ffjavascript";
 import * as fastFile from "fastfile";
 
 export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
@@ -119,6 +119,26 @@ export async function readFullSection(fd, sections, idSection) {
     const res = await fd.read(fd.readingSection.size);
     await endReadSection(fd);
     return res;
+}
+
+export async function readSection(fd, sections, idSection, offset, length) {
+
+    offset = (typeof offset === "undefined") ? 0 : offset;
+    length = (typeof length === "undefined") ? sections[idSection][0].size - offset : length;
+
+    if (offset + length > sections[idSection][0].size) {
+        throw new Error("Reading out of the range of the section");
+    }
+
+    let buff;
+    if (length < (1 << 30) ) {
+        buff = new Uint8Array(length);
+    } else {
+        buff = new BigBuffer(length);
+    }
+
+    await fd.readToBuffer(buff, 0, length, sections[idSection][0].p + offset);
+    return buff;
 }
 
 export async function sectionIsEqual(fd1, sections1, fd2, sections2, idSection) {

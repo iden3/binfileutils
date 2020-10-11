@@ -124,6 +124,26 @@ async function readFullSection(fd, sections, idSection) {
     return res;
 }
 
+async function readSection(fd, sections, idSection, offset, length) {
+
+    offset = (typeof offset === "undefined") ? 0 : offset;
+    length = (typeof length === "undefined") ? sections[idSection][0].size - offset : length;
+
+    if (offset + length > sections[idSection][0].size) {
+        throw new Error("Reading out of the range of the section");
+    }
+
+    let buff;
+    if (length < (1 << 30) ) {
+        buff = new Uint8Array(length);
+    } else {
+        buff = new ffjavascript.BigBuffer(length);
+    }
+
+    await fd.readToBuffer(buff, 0, length, sections[idSection][0].p + offset);
+    return buff;
+}
+
 async function sectionIsEqual(fd1, sections1, fd2, sections2, idSection) {
     const MAX_BUFF_SIZE = fd1.pageSize * 16;
     await startReadUniqueSection(fd1, sections1, idSection);
@@ -148,6 +168,7 @@ exports.endWriteSection = endWriteSection;
 exports.readBigInt = readBigInt;
 exports.readBinFile = readBinFile;
 exports.readFullSection = readFullSection;
+exports.readSection = readSection;
 exports.sectionIsEqual = sectionIsEqual;
 exports.startReadUniqueSection = startReadUniqueSection;
 exports.startWriteSection = startWriteSection;
