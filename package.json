@@ -1,6 +1,6 @@
 {
   "name": "@iden3/binfileutils",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Utils to work with iden3 binary files.",
   "type": "module",
   "exports": {
