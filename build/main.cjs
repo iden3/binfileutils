@@ -117,13 +117,6 @@ async function copySection(fdFrom, sections, fdTo, sectionId, size) {
 
 }
 
-async function readFullSection(fd, sections, idSection) {
-    await startReadUniqueSection(fd, sections, idSection);
-    const res = await fd.read(fd.readingSection.size);
-    await endReadSection(fd);
-    return res;
-}
-
 async function readSection(fd, sections, idSection, offset, length) {
 
     offset = (typeof offset === "undefined") ? 0 : offset;
@@ -167,7 +160,6 @@ exports.endReadSection = endReadSection;
 exports.endWriteSection = endWriteSection;
 exports.readBigInt = readBigInt;
 exports.readBinFile = readBinFile;
-exports.readFullSection = readFullSection;
 exports.readSection = readSection;
 exports.sectionIsEqual = sectionIsEqual;
 exports.startReadUniqueSection = startReadUniqueSection;

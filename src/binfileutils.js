@@ -114,13 +114,6 @@ export async function copySection(fdFrom, sections, fdTo, sectionId, size) {
 
 }
 
-export async function readFullSection(fd, sections, idSection) {
-    await startReadUniqueSection(fd, sections, idSection);
-    const res = await fd.read(fd.readingSection.size);
-    await endReadSection(fd);
-    return res;
-}
-
 export async function readSection(fd, sections, idSection, offset, length) {
 
     offset = (typeof offset === "undefined") ? 0 : offset;
