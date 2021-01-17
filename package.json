@@ -26,9 +26,7 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "eslint": "^6.8.0",
-    "rollup": "^2.20.0",
-    "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0"
+    "rollup": "^2.20.0"
   },
   "dependencies": {
     "fastfile": "0.0.19",

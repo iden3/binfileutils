@@ -1,5 +1,7 @@
-import resolve from "rollup-plugin-node-resolve";
-import commonJS from "rollup-plugin-commonjs";
+import fs from "fs";
+import { builtinModules as builtin } from "module";
+
+const pkg = JSON.parse(fs.readFileSync("./package.json"));
 
 export default {
     input: "./src/binfileutils.js",
@@ -8,14 +10,8 @@ export default {
         format: "cjs",
     },
     external: [
-        "ffjavascript",
-        "fastfile"
-    ],
-    plugins: [
-        resolve({ preferBuiltins: true }),
-        commonJS({
-            preserveSymlinks: true
-        }),
+        ...Object.keys(pkg.dependencies),
+        ...builtin,
     ]
 };
 
