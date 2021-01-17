@@ -31,7 +31,7 @@
     "rollup-plugin-node-resolve": "^5.2.0"
   },
   "dependencies": {
-    "fastfile": "0.0.18",
+    "fastfile": "0.0.19",
     "ffjavascript": "^0.2.30"
   }
 }
