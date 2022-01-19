@@ -30,6 +30,6 @@
   },
   "dependencies": {
     "fastfile": "0.0.19",
-    "ffjavascript": "^0.2.46"
+    "ffjavascript": "^0.2.48"
   }
 }
