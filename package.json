@@ -29,7 +29,7 @@
     "rollup": "^2.20.0"
   },
   "dependencies": {
-    "fastfile": "0.0.19",
+    "fastfile": "0.0.20",
     "ffjavascript": "^0.2.48"
   }
 }
