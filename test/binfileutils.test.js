@@ -50,7 +50,7 @@ async function createBinFile(fileName, fileType, fileVersion, nSections, section
 
 async function readBinFile(fileName, fileType, fileVersion, nSections, sections) {
     let res = [];
-    let [readFile, readSections] = await binFileUtils.readBinFile(fileName, fileType, fileVersion, 1 << 22, 1 << 24);
+    let {fd: readFile, sections: readSections} = await binFileUtils.readBinFile(fileName, fileType, fileVersion, 1 << 22, 1 << 24);
 
     let sectionIdx = getRandomValue(nSections) - 1;
 
@@ -152,7 +152,7 @@ describe("Bin file utils tests", function () {
         const fileVersion = 1 | 0x10000000;
         await createBinFile(fileName, fileType, fileVersion, nSections, sections);
 
-        let [readFile, readSections] = await binFileUtils.readBinFile(fileName, fileType, fileVersion, 1 << 22, 1 << 24);
+        let {fd: readFile, sections: readSections} = await binFileUtils.readBinFile(fileName, fileType, fileVersion, 1 << 22, 1 << 24);
 
         await expect(binFileUtils.endReadSection(readFile)).to.be.rejected;
 

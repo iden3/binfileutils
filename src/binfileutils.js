@@ -29,7 +29,6 @@ export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSiz
     }
 
     let sections = [];
-
     if(BIN_FORMAT_1 === binVersion) {
         await readBinFileV1();
     } else {
@@ -38,7 +37,7 @@ export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSiz
 
     fd.binVersion = binVersion;
 
-    return [fd, sections];
+    return {fd, sections};
 
     async function readBinFileV1() {
         const nSections = await fd.readULE32();
