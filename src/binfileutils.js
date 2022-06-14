@@ -4,6 +4,7 @@ import * as fastFile from "fastfile";
 
 const BIN_FORMAT_1 = 0x00000000;
 const BIN_FORMAT_2 = 0x10000000;
+const SECTIONS_TABLE_STEP = 256;
 
 export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
 
@@ -13,13 +14,19 @@ export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSiz
     let readedType = "";
     for (let i=0; i<4; i++) readedType += String.fromCharCode(b[i]);
 
-    if (readedType !== type) throw new Error(fileName + ": Invalid File format");
+    if (readedType !== type) {
+        fd.close();
+        throw new Error(fileName + ": Invalid File format");
+    }
 
     let v = await fd.readULE32();
 
     let [version, binVersion] = decodeVersion(v);
 
-    if (version > maxVersion) throw new Error("Version not supported");
+    if (version > maxVersion) {
+        fd.close();
+        throw new Error("Version not supported");
+    }
 
     let sections = [];
 
@@ -77,7 +84,7 @@ export async function createBinFile(fileName, type, version, nSections, cacheSiz
 
     const buff = new Uint8Array(4);
     for (let i=0; i<4; i++) buff[i] = type.charCodeAt(i);
-    await fd.write(buff, 0); // Magic "r1cs"
+    await fd.write(buff, 0); // 4 bytes text indicating the file's type
 
     await fd.writeULE32(version); // Version
 
@@ -86,7 +93,7 @@ export async function createBinFile(fileName, type, version, nSections, cacheSiz
     if(BIN_FORMAT_1 === binVersion) {
         await fd.writeULE32(nSections); // Number of Sections
     } else {
-        let nReservedSections = Math.ceil(nSections / 256) * 256;
+        let nReservedSections = Math.ceil(nSections / SECTIONS_TABLE_STEP) * SECTIONS_TABLE_STEP;
         await fd.writeULE32(nReservedSections); // Number of reserved sections
 
         fd.pSectionsTable = fd.pos;
@@ -103,7 +110,9 @@ export async function createBinFile(fileName, type, version, nSections, cacheSiz
 }
 
 export async function startWriteSection(fd, idSection) {
-    if (typeof fd.writingSection !== "undefined") throw new Error("Already writing a section");
+    if (typeof fd.writingSection !== "undefined") {
+        throw new Error("Already writing a section");
+    }
 
     if(BIN_FORMAT_1 === fd.binVersion) {
         await fd.writeULE32(idSection); // Header type
