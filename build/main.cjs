@@ -25,6 +25,10 @@ function _interopNamespace(e) {
 
 var fastFile__namespace = /*#__PURE__*/_interopNamespace(fastFile);
 
+const BIN_FORMAT_1 = 0x00000000;
+const BIN_FORMAT_2 = 0x10000000;
+const SECTIONS_TABLE_STEP = 256;
+
 async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
 
     const fd = await fastFile__namespace.readExisting(fileName, cacheSize, pageSize);
@@ -33,62 +37,143 @@ async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
     let readedType = "";
     for (let i=0; i<4; i++) readedType += String.fromCharCode(b[i]);
 
-    if (readedType != type) throw new Error(fileName + ": Invalid File format");
+    if (readedType !== type) {
+        fd.close();
+        throw new Error(fileName + ": Invalid File format");
+    }
 
     let v = await fd.readULE32();
 
-    if (v>maxVersion) throw new Error("Version not supported");
+    let [version, binVersion] = decodeVersion(v);
 
-    const nSections = await fd.readULE32();
-
-    // Scan sections
-    let sections = [];
-    for (let i=0; i<nSections; i++) {
-        let ht = await fd.readULE32();
-        let hl = await fd.readULE64();
-        if (typeof sections[ht] == "undefined") sections[ht] = [];
-        sections[ht].push({
-            p: fd.pos,
-            size: hl
-        });
-        fd.pos += hl;
+    if (version > maxVersion) {
+        fd.close();
+        throw new Error("Version not supported");
     }
 
+    let sections = [];
+    if(BIN_FORMAT_1 === binVersion) {
+        await readBinFileV1();
+    } else {
+        await readBinFileV2();
+    }
+
+    fd.binVersion = binVersion;
+
     return {fd, sections};
+
+    async function readBinFileV1() {
+        const nSections = await fd.readULE32();
+
+        // Scan sections
+        for (let i = 0; i < nSections; i++) {
+            let ht = await fd.readULE32();
+            let hl = await fd.readULE64();
+            if (typeof sections[ht] == "undefined") sections[ht] = [];
+            sections[ht].push({
+                p: fd.pos,
+                size: hl
+            });
+            fd.pos += hl;
+        }
+    }
+
+    async function readBinFileV2() {
+        //Reserved sections table size
+        const nReservedSections = await fd.readULE32();
+
+        //Get sections
+        for (let i = 0; i < nReservedSections; i++) {
+            //Section id
+            let sectionId = await fd.readULE32();
+            //Section size
+            let sectionSize = await fd.readULE64();
+            //Offset
+            let sectionOffset = await fd.readULE64();
+            if (sectionId !== 0) {
+                if (sections[sectionId] === undefined) sections[sectionId] = [];
+                sections[sectionId].push({
+                    p: sectionOffset,
+                    size: sectionSize,
+                });
+            }
+        }
+    }
 }
 
 async function createBinFile(fileName, type, version, nSections, cacheSize, pageSize) {
-
     const fd = await fastFile__namespace.createOverride(fileName, cacheSize, pageSize);
 
     const buff = new Uint8Array(4);
     for (let i=0; i<4; i++) buff[i] = type.charCodeAt(i);
-    await fd.write(buff, 0); // Magic "r1cs"
+    await fd.write(buff, 0); // 4 bytes text indicating the file's type
 
     await fd.writeULE32(version); // Version
-    await fd.writeULE32(nSections); // Number of Sections
+
+    let [fileVersion, binVersion] = decodeVersion(version);
+
+    if(BIN_FORMAT_1 === binVersion) {
+        await fd.writeULE32(nSections); // Number of Sections
+    } else {
+        let nReservedSections = Math.ceil(nSections / SECTIONS_TABLE_STEP) * SECTIONS_TABLE_STEP;
+        await fd.writeULE32(nReservedSections); // Number of reserved sections
+
+        fd.pSectionsTable = fd.pos;
+        for (let i = 0; i < nReservedSections; i++) {
+            await fd.writeULE32(0); // Section type
+            await fd.writeULE64(0); // Section size
+            await fd.writeULE64(0); // Absolute offset
+        }
+    }
+
+    fd.binVersion = binVersion;
 
     return fd;
 }
 
 async function startWriteSection(fd, idSection) {
-    if (typeof fd.writingSection !== "undefined") throw new Error("Already writing a section");
-    await fd.writeULE32(idSection); // Header type
-    fd.writingSection = {
-        pSectionSize: fd.pos
-    };
-    await fd.writeULE64(0); // Temporally set to 0 length
+    if (typeof fd.writingSection !== "undefined") {
+        throw new Error("Already writing a section");
+    }
+
+    if(BIN_FORMAT_1 === fd.binVersion) {
+        await fd.writeULE32(idSection); // Header type
+        fd.writingSection = {
+            pSectionSize: fd.pos
+        };
+        await fd.writeULE64(0); // Temporally set to 0 length
+    } else {
+        fd.writingSection = {
+            pSectionSize: fd.pos
+        };
+        const currentPos = fd.pos;
+        fd.pos = fd.pSectionsTable;
+        await fd.writeULE32(idSection); // Section type
+        await fd.writeULE64(0); // Section size, temporally set to 0
+        await fd.writeULE64(currentPos); // Absolute offset
+        fd.pos = currentPos;
+    }
 }
 
 async function endWriteSection(fd) {
     if (typeof fd.writingSection === "undefined") throw new Error("Not writing a section");
 
-    const sectionSize = fd.pos - fd.writingSection.pSectionSize - 8;
-    const oldPos = fd.pos;
-    fd.pos = fd.writingSection.pSectionSize;
-    await fd.writeULE64(sectionSize);
-    fd.pos = oldPos;
-    delete fd.writingSection;
+    if(BIN_FORMAT_1 === fd.binVersion) {
+        const sectionSize = fd.pos - fd.writingSection.pSectionSize - 8;
+        const oldPos = fd.pos;
+        fd.pos = fd.writingSection.pSectionSize;
+        await fd.writeULE64(sectionSize);
+        fd.pos = oldPos;
+        delete fd.writingSection;
+    } else {
+        const sectionSize = fd.pos - fd.writingSection.pSectionSize;
+        const currentPos = fd.pos;
+        fd.pos = fd.pSectionsTable + 4;
+        await fd.writeULE64(sectionSize); // Section size
+        fd.pos = currentPos;
+        fd.pSectionsTable += 20;
+        delete fd.writingSection;
+    }
 }
 
 async function startReadUniqueSection(fd, sections, idSection) {
@@ -172,6 +257,17 @@ async function sectionIsEqual(fd1, sections1, fd2, sections2, idSection) {
     await endReadSection(fd1);
     await endReadSection(fd2);
     return true;
+}
+
+function decodeVersion(encodedVersion) {
+    let binVersion = encodedVersion & BIN_FORMAT_2;
+
+    let version;
+    if(BIN_FORMAT_2 === binVersion) {
+        version = encodedVersion - BIN_FORMAT_2;
+    }
+
+    return [version, binVersion];
 }
 
 exports.copySection = copySection;
