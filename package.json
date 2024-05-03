@@ -26,6 +26,7 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "eslint": "^8.6.0",
+    "mocha": "^10.4.0",
     "rollup": "^2.20.0"
   },
   "dependencies": {
