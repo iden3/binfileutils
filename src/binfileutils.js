@@ -29,6 +29,7 @@ export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSiz
             size: hl
         });
         fd.pos += hl;
+        if(fd.pos > fd.totalSize) throw new Error("Invalid pointer");
     }
 
     return {fd, sections};
