@@ -125,8 +125,11 @@ export async function readSection(fd, sections, idSection, offset, length) {
 
     let buff;
     if (length < (1 << 30) ) {
-        buff = new Uint8Array(length);
+        console.log("Using SharedArrayBuffer of length", length);
+        //buff = new Uint8Array(length);
+        buff = new Uint8Array(new SharedArrayBuffer(length));
     } else {
+        console.log("Using BigBuffer of length", length);
         buff = new BigBuffer(length);
     }
 
