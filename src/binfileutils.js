@@ -2,6 +2,8 @@
 import  { Scalar, BigBuffer } from "ffjavascript";
 import * as fastFile from "fastfile";
 
+const MAX_BUFFER_SIZE = ( typeof Buffer !== "undefined" && Buffer.constants && Buffer.constants.MAX_LENGTH ) ? Buffer.constants.MAX_LENGTH : (1 << 30);
+
 export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
 
     const fd = await fastFile.readExisting(fileName, cacheSize, pageSize);
@@ -119,21 +121,23 @@ export async function readSection(fd, sections, idSection, offset, length) {
     offset = (typeof offset === "undefined") ? 0 : offset;
     length = (typeof length === "undefined") ? sections[idSection][0].size - offset : length;
 
+    console.time("readSection idSection="+ idSection+ " offset="+ offset+ " length="+ length);
+
     if (offset + length > sections[idSection][0].size) {
         throw new Error("Reading out of the range of the section");
     }
 
     let buff;
-    if (length < (1 << 30) ) {
-        console.log("Using SharedArrayBuffer of length", length);
-        //buff = new Uint8Array(length);
-        buff = new Uint8Array(new SharedArrayBuffer(length));
+    if (length < MAX_BUFFER_SIZE) {
+        buff = new Uint8Array(length);
     } else {
-        console.log("Using BigBuffer of length", length);
         buff = new BigBuffer(length);
     }
 
     await fd.readToBuffer(buff, 0, length, sections[idSection][0].p + offset);
+
+    console.timeEnd("readSection idSection="+ idSection+ " offset="+ offset+ " length="+ length);
+
     return buff;
 }
 
