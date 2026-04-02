@@ -19,7 +19,7 @@
   "module": "./src/binfileutils.js",
   "scripts": {
     "lint": "eslint .",
-    "clean": "rm -rf build",
+    "clean": "rimraf build",
     "pretest": "npm run build:node && npm run lint",
     "test": "vitest run",
     "test:node": "vitest run --project node-esm",
@@ -33,7 +33,11 @@
     "type": "git",
     "url": "https:https://github.com/iden3/binfileutils"
   },
-  "keywords": ["file", "binary", "fastfile"],
+  "keywords": [
+    "file",
+    "binary",
+    "fastfile"
+  ],
   "author": "Jordi Baylina",
   "license": "GPL-3.0",
   "devDependencies": {
@@ -43,6 +47,7 @@
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
     "playwright": "^1.59.0",
+    "rimraf": "^6.1.3",
     "vite": "^8.0.3",
     "vitest": "^4.1.2"
   },
