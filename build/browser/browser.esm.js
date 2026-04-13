@@ -1,5 +1,5 @@
 import { BigBuffer as e, Scalar as t } from "ffjavascript";
-//#region ../fastfile/build/browser/browser.esm.js
+//#region node_modules/fastfile/build/browser/browser.esm.js
 function n(e) {
 	let t = e.initialSize || 1 << 20, n = new c();
 	return n.o = e, n.o.data = new Uint8Array(t), n.allocSize = t, n.totalSize = 0, n.readOnly = !1, n.pos = 0, n;

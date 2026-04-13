@@ -23,7 +23,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 //#endregion
 let ffjavascript = require("ffjavascript");
 let fastfile = require("fastfile");
-fastfile = __toESM(fastfile);
+fastfile = __toESM(fastfile, 1);
 //#region src/binfileutils.js
 var MAX_BUFFER_SIZE = typeof Buffer !== "undefined" && Buffer.constants && Buffer.constants.MAX_LENGTH ? Buffer.constants.MAX_LENGTH : 1 << 30;
 async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
