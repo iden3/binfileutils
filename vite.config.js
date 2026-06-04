@@ -55,6 +55,7 @@ export default defineConfig(({ mode }) => {
                     test: {
                         name: "node-esm",
                         include: ["test/**/*.js"],
+                        exclude: ["test/browser.js"],
                         environment: "node",
                         globals: true,
                         testTimeout: 60_000,

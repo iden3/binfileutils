@@ -259,9 +259,9 @@ async function N(e, t, n, r, i) {
 	await O(n), await A(e, i != t[r][0].size);
 }
 async function P(t, n, r, i, a) {
-	if (i = i === void 0 ? 0 : i, a = a === void 0 ? n[r][0].size - i : a, console.time("readSection idSection=" + r + " offset=" + i + " length=" + a), i + a > n[r][0].size) throw Error("Reading out of the range of the section");
+	if (i = i === void 0 ? 0 : i, a = a === void 0 ? n[r][0].size - i : a, i + a > n[r][0].size) throw Error("Reading out of the range of the section");
 	let o;
-	return o = a < w ? new Uint8Array(a) : new e(a), await t.readToBuffer(o, 0, a, n[r][0].p + i), console.timeEnd("readSection idSection=" + r + " offset=" + i + " length=" + a), o;
+	return o = a < w ? new Uint8Array(a) : new e(a), await t.readToBuffer(o, 0, a, n[r][0].p + i), o;
 }
 async function F(e, t, n, r, i) {
 	let a = e.pageSize * 16;
