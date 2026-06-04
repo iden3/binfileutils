@@ -1,0 +1,27 @@
+name: Continuous Integration
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright dependencies
+        run: npx playwright install
+
+      - name: Run tests
+        run: npm test
