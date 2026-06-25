@@ -1,12 +1,9 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 var ffjavascript = require('ffjavascript');
 var fastFile = require('fastfile');
 
-function _interopNamespace(e) {
-    if (e && e.__esModule) return e;
+function _interopNamespaceDefault(e) {
     var n = Object.create(null);
     if (e) {
         Object.keys(e).forEach(function (k) {
@@ -19,11 +16,15 @@ function _interopNamespace(e) {
             }
         });
     }
-    n["default"] = e;
+    n.default = e;
     return Object.freeze(n);
 }
 
-var fastFile__namespace = /*#__PURE__*/_interopNamespace(fastFile);
+var fastFile__namespace = /*#__PURE__*/_interopNamespaceDefault(fastFile);
+
+// 1 GiB threshold (matched to BigBuffer's page size): sections at/above this are
+// read into a paged BigBuffer instead of one flat Uint8Array.
+const MAX_BUFFER_SIZE = 1 << 30;
 
 async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
 
@@ -142,20 +143,26 @@ async function readSection(fd, sections, idSection, offset, length) {
     offset = (typeof offset === "undefined") ? 0 : offset;
     length = (typeof length === "undefined") ? sections[idSection][0].size - offset : length;
 
+    console.time("readSection idSection="+ idSection+ " offset="+ offset+ " length="+ length);
+
     if (offset + length > sections[idSection][0].size) {
         throw new Error("Reading out of the range of the section");
     }
 
     let buff;
-    if (length < (1 << 30) ) {
+    if (length < MAX_BUFFER_SIZE) {
         buff = new Uint8Array(length);
     } else {
         buff = new ffjavascript.BigBuffer(length);
     }
 
     await fd.readToBuffer(buff, 0, length, sections[idSection][0].p + offset);
+
+    console.timeEnd("readSection idSection="+ idSection+ " offset="+ offset+ " length="+ length);
+
     return buff;
 }
+
 
 async function sectionIsEqual(fd1, sections1, fd2, sections2, idSection) {
     const MAX_BUFF_SIZE = fd1.pageSize * 16;

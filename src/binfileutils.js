@@ -2,7 +2,9 @@
 import  { Scalar, BigBuffer } from "ffjavascript";
 import * as fastFile from "fastfile";
 
-const MAX_BUFFER_SIZE = ( typeof Buffer !== "undefined" && Buffer.constants && Buffer.constants.MAX_LENGTH ) ? Buffer.constants.MAX_LENGTH : (1 << 30);
+// 1 GiB threshold (matched to BigBuffer's page size): sections at/above this are
+// read into a paged BigBuffer instead of one flat Uint8Array.
+const MAX_BUFFER_SIZE = 1 << 30;
 
 export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
 
@@ -140,6 +142,7 @@ export async function readSection(fd, sections, idSection, offset, length) {
 
     return buff;
 }
+
 
 export async function sectionIsEqual(fd1, sections1, fd2, sections2, idSection) {
     const MAX_BUFF_SIZE = fd1.pageSize * 16;
