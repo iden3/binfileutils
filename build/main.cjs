@@ -143,7 +143,6 @@ async function readSection(fd, sections, idSection, offset, length) {
     offset = (typeof offset === "undefined") ? 0 : offset;
     length = (typeof length === "undefined") ? sections[idSection][0].size - offset : length;
 
-
     if (offset + length > sections[idSection][0].size) {
         throw new Error("Reading out of the range of the section");
     }
@@ -156,11 +155,8 @@ async function readSection(fd, sections, idSection, offset, length) {
     }
 
     await fd.readToBuffer(buff, 0, length, sections[idSection][0].p + offset);
-
-
     return buff;
 }
-
 
 async function sectionIsEqual(fd1, sections1, fd2, sections2, idSection) {
     const MAX_BUFF_SIZE = fd1.pageSize * 16;
