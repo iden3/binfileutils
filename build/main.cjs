@@ -164,6 +164,30 @@ async function readSection(fd, sections, idSection, offset, length) {
 }
 
 
+// readSectionToStream
+async function readSectionToStream(fd, sections, idSection, writeStream, offset, length) {
+
+    offset = (typeof offset === "undefined") ? 0 : offset;
+    length = (typeof length === "undefined") ? sections[idSection][0].size - offset : length;
+
+    if (offset + length > sections[idSection][0].size) {
+        throw new Error("Reading out of the range of the section");
+    }
+
+    const chunkSize = fd.pageSize * 16;
+    let remaining = length;
+    let pos = sections[idSection][0].p + offset;
+
+    while (remaining > 0) {
+        const toRead = Math.min(remaining, chunkSize);
+        const buff = await fd.read(toRead, pos);
+        await writeStream.write(buff);
+        pos += toRead;
+        remaining -= toRead;
+    }
+}
+
+
 async function sectionIsEqual(fd1, sections1, fd2, sections2, idSection) {
     const MAX_BUFF_SIZE = fd1.pageSize * 16;
     await startReadUniqueSection(fd1, sections1, idSection);
@@ -188,6 +212,7 @@ exports.endWriteSection = endWriteSection;
 exports.readBigInt = readBigInt;
 exports.readBinFile = readBinFile;
 exports.readSection = readSection;
+exports.readSectionToStream = readSectionToStream;
 exports.sectionIsEqual = sectionIsEqual;
 exports.startReadUniqueSection = startReadUniqueSection;
 exports.startWriteSection = startWriteSection;
