@@ -4,14 +4,30 @@
   "description": "Utils to work with iden3 binary files.",
   "type": "module",
   "exports": {
-    "import": "./src/binfileutils.js",
-    "require": "./build/main.cjs"
+    ".": {
+      "node": {
+        "import": "./src/binfileutils.js",
+        "require": "./build/main.cjs"
+      },
+      "browser": {
+        "import": "./build/browser/browser.esm.js"
+      },
+      "default": "./src/binfileutils.js"
+    }
   },
   "main": "./build/main.cjs",
   "module": "./src/binfileutils.js",
   "scripts": {
-    "test": "mocha",
-    "build": "rollup -c rollup.cjs.config.js"
+    "lint": "eslint .",
+    "clean": "rimraf build",
+    "pretest": "npm run build:node && npm run build:browser && npm run lint",
+    "test": "vitest run",
+    "test:node": "vitest run --project node-esm",
+    "test:browser": "vitest run --project browser",
+    "test:watch": "vitest --project node-esm",
+    "build:node": "vite build",
+    "build:browser": "vite build --mode browser",
+    "build": "npm run clean && npm run build:node && npm run build:browser"
   },
   "repository": {
     "type": "git",
@@ -26,17 +42,23 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
-    "mocha": "^11.7.6",
-    "rollup": "^4.62.2"
+    "playwright": "^1.59.0",
+    "rimraf": "^6.1.3",
+    "vite": "^8.0.3",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
-    "fastfile": "git+https://github.com/iden3/fastfile.git#dba4d82e8910264951d3242720f5357308fe70a1",
-    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#6ba342fc2526f9cad9b729039a3294ca9bd04ce4"
+    "fastfile": "git+https://github.com/iden3/fastfile.git#e7eb0f05ab17027c2c7760eaebf8137001d7827d",
+    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#4ac1cba04d29eb7130aa2d09312e5779a28a62d4"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5",
-    "diff": "^8.0.3"
+    "diff": "^8.0.3",
+    "postcss": "^8.5.26",
+    "brace-expansion": "^5.0.9"
   }
 }

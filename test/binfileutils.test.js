@@ -11,7 +11,6 @@ import * as bfu from "../src/binfileutils.js";
 // snarkjs reads, so a regression here silently corrupts every downstream
 // consumer with nothing to catch it.
 describe("binfileutils", function () {
-    this.timeout(30000);
 
     // Most tests use an in-memory file (fastfile's {type:"mem"} backend) so
     // they run fast and need no cleanup; a couple of malformed/truncated-file
