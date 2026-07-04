@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "fastfile": "github:iden3/fastfile#e432ad2dc7198cefed28d6c29e42aa540b3d6901",
-    "ffjavascript": "github:iden3/ffjavascript#617f3fd499adf06965621c8ad1dff3b762e92b68"
+    "ffjavascript": "github:iden3/ffjavascript#1d913e529537f4f2ce0eafc4773ceeb15d4283ad"
   }
 }
