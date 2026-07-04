@@ -143,7 +143,6 @@ async function readSection(fd, sections, idSection, offset, length) {
     offset = (typeof offset === "undefined") ? 0 : offset;
     length = (typeof length === "undefined") ? sections[idSection][0].size - offset : length;
 
-    console.time("readSection idSection="+ idSection+ " offset="+ offset+ " length="+ length);
 
     if (offset + length > sections[idSection][0].size) {
         throw new Error("Reading out of the range of the section");
@@ -158,7 +157,6 @@ async function readSection(fd, sections, idSection, offset, length) {
 
     await fd.readToBuffer(buff, 0, length, sections[idSection][0].p + offset);
 
-    console.timeEnd("readSection idSection="+ idSection+ " offset="+ offset+ " length="+ length);
 
     return buff;
 }
