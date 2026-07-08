@@ -28,10 +28,15 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
+    "mocha": "^11.7.6",
     "rollup": "^4.62.2"
   },
   "dependencies": {
-    "fastfile": "git+https://github.com/iden3/fastfile.git#86a85b4e08db0204e9f2e957e4a9ac63bcfec989",
+    "fastfile": "git+https://github.com/iden3/fastfile.git#4ff30102e65275b76d8d5c31af1cc52d4d9255b9",
     "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#57020378e5f22e99d23b2e22941e65f218eab3ac"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5",
+    "diff": "^8.0.3"
   }
 }
