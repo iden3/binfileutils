@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "fastfile": "git+https://github.com/iden3/fastfile.git#4ff30102e65275b76d8d5c31af1cc52d4d9255b9",
-    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#57020378e5f22e99d23b2e22941e65f218eab3ac"
+    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#a923ec5de33c672140760539db37ed88af622c9d"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5",
