@@ -2,6 +2,7 @@ import assert from "assert";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import http from "http";
 import * as bfu from "../src/binfileutils.js";
 
 // This repo had ZERO tests of any kind before this file: `npm test` ran mocha
@@ -235,5 +236,76 @@ describe("binfileutils", function () {
         } finally {
             fs.rmSync(tmpDir, { recursive: true, force: true });
         }
+    });
+
+    // End-to-end over HTTP: readBinFile with a URL must parse the header and
+    // serve section reads via Range requests (fastfile's http backend) --
+    // the path a browser prover takes for a zkey hosted on a CDN. A server
+    // without range support must still work via the buffer-it-all fallback.
+    describe("reading a bin file from a URL", function () {
+        function serve(data, withRanges) {
+            const log = { requests: [] };
+            const server = http.createServer((req, res) => {
+                log.requests.push(req.headers.range || null);
+                const m = withRanges && req.headers.range ?
+                    /^bytes=(\d+)-(\d+)$/.exec(req.headers.range) : null;
+                if (m) {
+                    const start = parseInt(m[1]);
+                    const end = Math.min(parseInt(m[2]), data.length - 1);
+                    const body = Buffer.from(data.slice(start, end + 1));
+                    res.writeHead(206, {
+                        "Content-Range": `bytes ${start}-${end}/${data.length}`,
+                        "Content-Length": body.length,
+                        "ETag": "\"v1\"",
+                    });
+                    res.end(body);
+                } else {
+                    res.writeHead(200, { "Content-Length": data.length });
+                    res.end(Buffer.from(data));
+                }
+            });
+            return new Promise((resolve) => {
+                server.listen(0, "127.0.0.1", () => resolve({
+                    url: `http://127.0.0.1:${server.address().port}/file.bin`,
+                    log,
+                    close: () => new Promise((r) => server.close(r)),
+                }));
+            });
+        }
+
+        async function roundTrip(withRanges) {
+            const big = new Uint8Array(200000);
+            for (let i = 0; i < big.length; i++) big[i] = (i * 7 + 3) & 0xFF;
+            const o = await writeSimpleFile([
+                { id: 1, data: new Uint8Array([9, 8, 7]) },
+                { id: 2, data: big },
+            ]);
+            const srv = await serve(o.data, withRanges);
+            try {
+                const { fd, sections } = await bfu.readBinFile(srv.url, "test", 1);
+                assert.strictEqual(sections[2][0].size, big.length);
+                const s1 = await bfu.readSection(fd, sections, 1);
+                const s2 = await bfu.readSection(fd, sections, 2);
+                assert.deepStrictEqual(Array.from(s1), [9, 8, 7]);
+                assert.deepStrictEqual(Buffer.from(s2), Buffer.from(big));
+                // partial section read (what a streaming multiexp issues)
+                const part = await bfu.readSection(fd, sections, 2, 1000, 5000);
+                assert.deepStrictEqual(Buffer.from(part), Buffer.from(big.slice(1000, 6000)));
+                await fd.close();
+                return srv.log;
+            } finally {
+                await srv.close();
+            }
+        }
+
+        it("streams header and sections via Range requests", async () => {
+            const log = await roundTrip(true);
+            for (const r of log.requests) assert.ok(r, "expected only Range requests");
+        });
+
+        it("falls back to full buffering when the server lacks Range support", async () => {
+            const log = await roundTrip(false);
+            assert.strictEqual(log.requests.length, 1);
+        });
     });
 });
