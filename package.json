@@ -25,11 +25,18 @@
   "author": "Jordi Baylina",
   "license": "GPL-3.0",
   "devDependencies": {
-    "eslint": "^8.6.0",
-    "rollup": "^2.20.0"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
+    "mocha": "^11.7.6",
+    "rollup": "^4.62.2"
   },
   "dependencies": {
-    "fastfile": "0.0.20",
-    "ffjavascript": "^0.3.0"
+    "fastfile": "git+https://github.com/iden3/fastfile.git#332248829e90683e4d398a05af7665b2d391a2db",
+    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#4078b990781e10da8a2044c798c5fa457f6d3844"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5",
+    "diff": "^8.0.3"
   }
 }

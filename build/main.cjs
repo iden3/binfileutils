@@ -1,12 +1,9 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 var ffjavascript = require('ffjavascript');
 var fastFile = require('fastfile');
 
-function _interopNamespace(e) {
-    if (e && e.__esModule) return e;
+function _interopNamespaceDefault(e) {
     var n = Object.create(null);
     if (e) {
         Object.keys(e).forEach(function (k) {
@@ -19,11 +16,15 @@ function _interopNamespace(e) {
             }
         });
     }
-    n["default"] = e;
+    n.default = e;
     return Object.freeze(n);
 }
 
-var fastFile__namespace = /*#__PURE__*/_interopNamespace(fastFile);
+var fastFile__namespace = /*#__PURE__*/_interopNamespaceDefault(fastFile);
+
+// 1 GiB threshold (matched to BigBuffer's page size): sections at/above this are
+// read into a paged BigBuffer instead of one flat Uint8Array.
+const MAX_BUFFER_SIZE = 1 << 30;
 
 async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
 
@@ -147,7 +148,7 @@ async function readSection(fd, sections, idSection, offset, length) {
     }
 
     let buff;
-    if (length < (1 << 30) ) {
+    if (length < MAX_BUFFER_SIZE) {
         buff = new Uint8Array(length);
     } else {
         buff = new ffjavascript.BigBuffer(length);
