@@ -138,6 +138,37 @@ describe("binfileutils", function () {
         await fd.close();
     });
 
+    it("rejects misuse of the section write/read protocol", async () => {
+        const fd = await bfu.createBinFile(memFile(), "test", 1, 1, 1 << 20, 1 << 14);
+
+        await assert.rejects(bfu.endWriteSection(fd), /Not writing a section/);
+        await bfu.startWriteSection(fd, 1);
+        await assert.rejects(bfu.startWriteSection(fd, 1), /Already writing a section/);
+        await fd.write(new Uint8Array([1, 2, 3]));
+        await bfu.endWriteSection(fd);
+        await fd.close();
+
+        const { fd: rfd, sections } = await bfu.readBinFile({ type: "mem", data: fd.o.data }, "test", 1);
+        await assert.rejects(bfu.endReadSection(rfd), /Not reading a section/);
+        await bfu.startReadUniqueSection(rfd, sections, 1);
+        await assert.rejects(bfu.startReadUniqueSection(rfd, sections, 1), /Already reading a section/);
+        await rfd.read(3);
+        await bfu.endReadSection(rfd);
+        await rfd.close();
+    });
+
+    it("sectionIsEqual returns false when section sizes differ", async () => {
+        const a = await writeSimpleFile([{ id: 1, data: new Uint8Array([1, 2, 3]) }]);
+        const b = await writeSimpleFile([{ id: 1, data: new Uint8Array([1, 2, 3, 4]) }]);
+
+        const fa = await bfu.readBinFile({ type: "mem", data: a.data }, "test", 1);
+        const fb = await bfu.readBinFile({ type: "mem", data: b.data }, "test", 1);
+        const eq = await bfu.sectionIsEqual(fa.fd, fa.sections, fb.fd, fb.sections, 1);
+        assert.strictEqual(eq, false);
+        await fa.fd.close();
+        await fb.fd.close();
+    });
+
     it("copySection produces a byte-identical section in the destination file", async () => {
         const o = await writeSimpleFile([{ id: 1, data: new Uint8Array([10, 20, 30, 40, 50]) }]);
         const { fd: fdFrom, sections: secFrom } = await bfu.readBinFile(o, "test", 1, 1 << 20, 1 << 14);
