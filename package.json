@@ -32,7 +32,7 @@
     "rollup": "^4.62.2"
   },
   "dependencies": {
-    "fastfile": "git+https://github.com/iden3/fastfile.git#332248829e90683e4d398a05af7665b2d391a2db",
+    "fastfile": "git+https://github.com/iden3/fastfile.git#62788794a30341e63a6d55c61f6d28d35d63c70f",
     "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#4078b990781e10da8a2044c798c5fa457f6d3844"
   },
   "overrides": {
