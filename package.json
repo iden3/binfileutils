@@ -32,8 +32,8 @@
     "rollup": "^4.62.2"
   },
   "dependencies": {
-    "fastfile": "git+https://github.com/iden3/fastfile.git#547eb2794b44b66a197c265ceb0113bc12468812",
-    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#3cc2f7a9315f51d08ab9bea6fc4790e35bccab57"
+    "fastfile": "git+https://github.com/iden3/fastfile.git#dba4d82e8910264951d3242720f5357308fe70a1",
+    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#6ba342fc2526f9cad9b729039a3294ca9bd04ce4"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5",
