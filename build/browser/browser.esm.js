@@ -448,7 +448,13 @@ async function N(e) {
 		options: e.persistentCache
 	}) : null, i = { Range: "bytes=0-0" };
 	n && n.validator && (n.validator[0] === "\"" || n.validator.indexOf("W/") === 0 ? i["If-None-Match"] = n.validator : i["If-Modified-Since"] = n.validator);
-	let a = await fetch(t, { headers: i });
+	let a;
+	try {
+		a = await fetch(t, { headers: i });
+	} catch (e) {
+		if (!("If-None-Match" in i) && !("If-Modified-Since" in i)) throw e;
+		a = await fetch(t, { headers: { Range: "bytes=0-0" } });
+	}
 	if (a.status === 304) return await B(a), await P(t, n.validator, n.totalSize, e);
 	if (a.status === 206) {
 		let n = a.headers.get("content-range"), r = n ? /\/(\d+)\s*$/.exec(n) : null;
