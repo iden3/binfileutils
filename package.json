@@ -52,7 +52,7 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "fastfile": "git+https://github.com/iden3/fastfile.git#653bce61ee166f52161abcd00c96652b5d98f58c",
+    "fastfile": "git+https://github.com/iden3/fastfile.git#66f56958dd488888773e9c757b543ca8df9c951b",
     "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#8430220603e7f1d57ee0a18cac2f14bf507a5326"
   },
   "overrides": {

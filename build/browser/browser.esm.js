@@ -442,7 +442,7 @@ async function te(e) {
 	}
 }
 var M = 65536;
-async function N(e) {
+async function ne(e) {
 	let t = e.url, n = e.persistentCache ? await j({
 		fileKey: t,
 		options: e.persistentCache
@@ -455,14 +455,14 @@ async function N(e) {
 		if (!("If-None-Match" in i) && !("If-Modified-Since" in i)) throw e;
 		a = await fetch(t, { headers: { Range: "bytes=0-0" } });
 	}
-	if (a.status === 304) return await B(a), await P(t, n.validator, n.totalSize, e);
+	if (a.status === 304) return await H(a), await N(t, n.validator, n.totalSize, e);
 	if (a.status === 206) {
 		let n = a.headers.get("content-range"), r = n ? /\/(\d+)\s*$/.exec(n) : null;
 		if (r) {
 			let n = parseInt(r[1]);
-			return await a.arrayBuffer(), await P(t, I(a), n, e);
+			return await a.arrayBuffer(), await N(t, F(a), n, e);
 		}
-		return await a.arrayBuffer(), await F(t);
+		return await a.arrayBuffer(), await P(t);
 	}
 	if (!a.ok && a.status !== 416) throw Error("HTTP " + a.status + " fetching " + t);
 	if (a.status === 416) {
@@ -470,11 +470,11 @@ async function N(e) {
 		return e && /\/0\s*$/.test(e) ? r({
 			type: "mem",
 			data: /* @__PURE__ */ new Uint8Array()
-		}) : await F(t);
+		}) : await P(t);
 	}
 	let o = new Uint8Array(await a.arrayBuffer());
 	if (e.persistentCache) {
-		let n = I(a);
+		let n = F(a);
 		n && await te({
 			fileKey: t,
 			validator: n,
@@ -488,10 +488,10 @@ async function N(e) {
 		data: o
 	});
 }
-async function P(e, t, n, r) {
+async function N(e, t, n, r) {
 	let i = null, a = async function(n, r, a, o) {
 		if (!i) try {
-			return await ie(e, t, n, r, a, o);
+			return await B(e, t, n, r, a, o);
 		} catch (e) {
 			if (!e || !e.degradeToFull) throw e;
 			i = e.fullBodyPromise;
@@ -507,7 +507,7 @@ async function P(e, t, n, r) {
 		options: r.persistentCache
 	})), new y(a, n, r.cacheSize, o);
 }
-async function F(e) {
+async function P(e) {
 	let t = await fetch(e);
 	if (!t.ok) throw Error("HTTP " + t.status + " fetching " + e);
 	return r({
@@ -515,13 +515,13 @@ async function F(e) {
 		data: new Uint8Array(await t.arrayBuffer())
 	});
 }
-function I(e) {
+function F(e) {
 	let t = e.headers.get("etag");
 	return t && t.indexOf("W/") !== 0 ? t : e.headers.get("last-modified") || null;
 }
-var ne = 4, L = 0, R = [];
+var I = 4, L = 0, R = [];
 async function re(e) {
-	for (; L >= ne;) await new Promise((e) => R.push(e));
+	for (; L >= I;) await new Promise((e) => R.push(e));
 	L++;
 	try {
 		return await e();
@@ -531,73 +531,110 @@ async function re(e) {
 		e && e();
 	}
 }
-async function ie(e, t, n, r, i, a) {
-	return re(() => z(e, t, n, r, i, a));
+var z = {
+	retries: 3,
+	backoffMs: 300,
+	stallTimeoutMs: 1e4
+}, ie = (e) => new Promise((t) => setTimeout(t, e));
+async function B(e, t, n, r, i, a) {
+	return re(async () => {
+		for (let o = 0;; o++) try {
+			return await V(e, t, n, r, i, a);
+		} catch (e) {
+			if (e && (e.degradeToFull || e.permanent) || o >= z.retries) throw e;
+			await ie(z.backoffMs * (1 << o));
+		}
+	});
 }
-async function z(e, t, n, r, i, a) {
+async function V(e, t, n, r, i, a) {
 	let o = { Range: "bytes=" + i + "-" + (i + a - 1) };
 	t && (o["If-Range"] = t);
-	let s = await fetch(e, { headers: o });
-	if (s.status === 200) {
-		let n = I(s);
+	let s = typeof AbortController < "u" ? new AbortController() : null, c = null, l = () => {
+		s && (c && clearTimeout(c), c = setTimeout(() => s.abort(/* @__PURE__ */ Error(e + ": no data for " + z.stallTimeoutMs + "ms")), z.stallTimeoutMs));
+	}, u = () => {
+		c && clearTimeout(c), c = null;
+	};
+	l();
+	let d;
+	try {
+		d = await fetch(e, s ? {
+			headers: o,
+			signal: s.signal
+		} : { headers: o });
+	} catch (e) {
+		throw u(), e;
+	}
+	if (l(), d.status === 200) {
+		let n = F(d);
 		if (!t || n && n === t) {
+			u();
 			let t = /* @__PURE__ */ Error(e + ": origin ignored Range; degrading to full buffering");
-			throw t.degradeToFull = !0, t.fullBodyPromise = s.arrayBuffer().then((e) => new Uint8Array(e)), t;
+			throw t.degradeToFull = !0, t.fullBodyPromise = d.arrayBuffer().then((e) => new Uint8Array(e)), t;
 		}
-		throw await B(s), Error(e + ": file changed (or server stopped honoring Range) while reading");
+		u(), await H(d);
+		let r = /* @__PURE__ */ Error(e + ": file changed (or server stopped honoring Range) while reading");
+		throw r.permanent = !0, r;
 	}
-	if (s.status !== 206) throw await B(s), Error("HTTP " + s.status + " reading range " + i + "+" + a + " of " + e);
-	let c = s.headers.get("content-range"), l = c ? /bytes\s+(\d+)-(\d+)\//.exec(c) : null;
-	if (l && parseInt(l[1]) !== i) throw await B(s), Error(e + ": server returned range starting at " + l[1] + ", requested " + i);
-	let u = 0;
-	if (s.body && typeof s.body.getReader == "function") {
-		let t = s.body.getReader();
-		for (;;) {
-			let i = await t.read();
-			if (i.done) break;
-			if (u + i.value.byteLength > a) throw t.cancel().catch(function() {}), Error(e + ": range response longer than requested");
-			n.set(i.value, r + u), u += i.value.byteLength;
+	if (d.status !== 206) {
+		u(), await H(d);
+		let t = /* @__PURE__ */ Error("HTTP " + d.status + " reading range " + i + "+" + a + " of " + e);
+		throw d.status < 500 && d.status !== 429 && (t.permanent = !0), t;
+	}
+	let f = d.headers.get("content-range"), p = f ? /bytes\s+(\d+)-(\d+)\//.exec(f) : null;
+	if (p && parseInt(p[1]) !== i) throw await H(d), Error(e + ": server returned range starting at " + p[1] + ", requested " + i);
+	let m = 0;
+	try {
+		if (d.body && typeof d.body.getReader == "function") {
+			let t = d.body.getReader();
+			for (;;) {
+				let i = await t.read();
+				if (l(), i.done) break;
+				if (m + i.value.byteLength > a) throw t.cancel().catch(function() {}), Error(e + ": range response longer than requested");
+				n.set(i.value, r + m), m += i.value.byteLength;
+			}
+		} else {
+			/* c8 ignore start */
+			let t = new Uint8Array(await d.arrayBuffer());
+			if (t.byteLength > a) throw Error(e + ": range response longer than requested");
+			n.set(t, r), m = t.byteLength;
 		}
-	} else {
-		/* c8 ignore start */
-		let t = new Uint8Array(await s.arrayBuffer());
-		if (t.byteLength > a) throw Error(e + ": range response longer than requested");
-		n.set(t, r), u = t.byteLength;
+	} finally {
+		u();
 	}
-	if (u !== a) throw Error(e + ": short range response (" + u + "/" + a + " bytes at " + i + ")");
+	if (m !== a) throw Error(e + ": short range response (" + m + "/" + a + " bytes at " + i + ")");
 }
-async function B(e) {
+async function H(e) {
 	try {
 		e.body && typeof e.body.cancel == "function" ? await e.body.cancel() : await e.arrayBuffer();
 	} catch {}
 }
-var V = 1 << 20;
-function H(e) {
+var U = 1 << 20;
+function W(e) {
 	let t = e.blob, n = async function(e, n, r, i) {
 		let a = await t.slice(r, r + i).arrayBuffer();
 		if (a.byteLength !== i) throw Error("short blob read (" + a.byteLength + "/" + i + " bytes at " + r + ")");
 		e.set(new Uint8Array(a), n);
-	}, r = Math.min(e.pageSize || V, V);
+	}, r = Math.min(e.pageSize || U, U);
 	return new y(n, t.size, e.cacheSize, r);
 }
-function U() {
+function G() {
 	throw Error("File I/O is not supported in the browser");
 }
-function W(e) {
+function K(e) {
 	return e instanceof Uint8Array ? {
 		type: "mem",
 		data: e
-	} : (typeof e == "string" && U(), e);
+	} : (typeof e == "string" && G(), e);
 }
-function G(e, t, n) {
-	if (e.type === "file" && U(), e.type === "mem") return t(e);
+function q(e, t, n) {
+	if (e.type === "file" && G(), e.type === "mem") return t(e);
 	if (e.type === "bigMem") return n(e);
 	throw Error("Invalid FastFile type: " + e.type);
 }
-function K(e) {
-	return G(W(e), n, u);
+function J(e) {
+	return q(K(e), n, u);
 }
-async function q(e, t, n) {
+async function ae(e, t, n) {
 	return e instanceof Uint8Array && (e = {
 		type: "mem",
 		data: e
@@ -611,13 +648,13 @@ async function q(e, t, n) {
 		url: e,
 		cacheSize: t,
 		pageSize: n
-	}), e.type === "http" ? await N(e) : e.type === "blob" ? H(e) : G(e, r, d);
+	}), e.type === "http" ? await ne(e) : e.type === "blob" ? W(e) : q(e, r, d);
 }
 //#endregion
 //#region src/binfileutils.js
-var J = 1 << 30;
-async function ae(e, t, n, r, i) {
-	let a = await q(e, r, i), o = await a.read(4), s = "";
+var oe = 1 << 30;
+async function se(e, t, n, r, i) {
+	let a = await ae(e, r, i), o = await a.read(4), s = "";
 	for (let e = 0; e < 4; e++) s += String.fromCharCode(o[e]);
 	if (s != t) throw Error(e + ": Invalid File format");
 	if (await a.readULE32() > n) throw Error("Version not supported");
@@ -634,8 +671,8 @@ async function ae(e, t, n, r, i) {
 		sections: l
 	};
 }
-async function oe(e, t, n, r, i, a) {
-	let o = await K(e, i, a), s = /* @__PURE__ */ new Uint8Array(4);
+async function ce(e, t, n, r, i, a) {
+	let o = await J(e, i, a), s = /* @__PURE__ */ new Uint8Array(4);
 	for (let e = 0; e < 4; e++) s[e] = t.charCodeAt(e);
 	return await o.write(s, 0), await o.writeULE32(n), await o.writeULE32(r), o;
 }
@@ -659,15 +696,15 @@ async function Q(e, t) {
 	if (!t && e.pos - e.readingSection.p != e.readingSection.size) throw Error("Invalid section size reading");
 	delete e.readingSection;
 }
-async function se(e, n, r, i) {
+async function le(e, n, r, i) {
 	let a = new Uint8Array(r);
 	t.toRprLE(a, 0, n, r), await e.write(a, i);
 }
-async function ce(e, n, r) {
+async function $(e, n, r) {
 	let i = await e.read(n, r);
 	return t.fromRprLE(i, 0, n);
 }
-async function le(e, t, n, r, i) {
+async function ue(e, t, n, r, i) {
 	i === void 0 && (i = t[r][0].size);
 	let a = e.pageSize;
 	await Z(e, t, r), await Y(n, r);
@@ -677,12 +714,12 @@ async function le(e, t, n, r, i) {
 	}
 	await X(n), await Q(e, i != t[r][0].size);
 }
-async function $(t, n, r, i, a) {
+async function de(t, n, r, i, a) {
 	if (i = i === void 0 ? 0 : i, a = a === void 0 ? n[r][0].size - i : a, i + a > n[r][0].size) throw Error("Reading out of the range of the section");
 	let o;
-	return o = a < J ? new Uint8Array(a) : new e(a), await t.readToBuffer(o, 0, a, n[r][0].p + i), o;
+	return o = a < oe ? new Uint8Array(a) : new e(a), await t.readToBuffer(o, 0, a, n[r][0].p + i), o;
 }
-async function ue(e, t, n, r, i) {
+async function fe(e, t, n, r, i) {
 	let a = e.pageSize * 16;
 	if (await Z(e, t, i), await Z(n, r, i), t[i][0].size != r[i][0].size) return !1;
 	let o = t[i][0].size;
@@ -693,4 +730,4 @@ async function ue(e, t, n, r, i) {
 	return await Q(e), await Q(n), !0;
 }
 //#endregion
-export { le as copySection, oe as createBinFile, Q as endReadSection, X as endWriteSection, ce as readBigInt, ae as readBinFile, $ as readSection, ue as sectionIsEqual, Z as startReadUniqueSection, Y as startWriteSection, se as writeBigInt };
+export { ue as copySection, ce as createBinFile, Q as endReadSection, X as endWriteSection, $ as readBigInt, se as readBinFile, de as readSection, fe as sectionIsEqual, Z as startReadUniqueSection, Y as startWriteSection, le as writeBigInt };
