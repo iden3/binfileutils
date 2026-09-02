@@ -20,8 +20,7 @@
   "scripts": {
     "lint": "eslint .",
     "clean": "node -e \"fs.rmSync('build',{recursive:true,force:true})\"",
-    "pretest": "npm run build:node && npm run build:browser && npm run lint",
-    "test": "vitest run",
+    "test": "npm run build:node && npm run build:browser && npm run lint && vitest run",
     "test:node": "vitest run --project node-esm",
     "test:browser": "vitest run --project browser",
     "test:watch": "vitest --project node-esm",
