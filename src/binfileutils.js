@@ -2,6 +2,10 @@
 import  { Scalar, BigBuffer } from "ffjavascript";
 import * as fastFile from "fastfile";
 
+// 1 GiB threshold (matched to BigBuffer's page size): sections at/above this are
+// read into a paged BigBuffer instead of one flat Uint8Array.
+const MAX_BUFFER_SIZE = 1 << 30;
+
 export async function readBinFile(fileName, type, maxVersion, cacheSize, pageSize) {
 
     const fd = await fastFile.readExisting(fileName, cacheSize, pageSize);
@@ -124,9 +128,11 @@ export async function readSection(fd, sections, idSection, offset, length) {
     }
 
     let buff;
-    if (length < (1 << 30) ) {
+    if (length < MAX_BUFFER_SIZE) {
         buff = new Uint8Array(length);
     } else {
+        // coverage: BigBuffer path requires a >=1 GiB section
+        /* c8 ignore next 2 */
         buff = new BigBuffer(length);
     }
 
