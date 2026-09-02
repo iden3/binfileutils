@@ -50,8 +50,8 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "fastfile": "git+https://github.com/iden3/fastfile.git#343012a10db84bddc7fc52a42d092a5415b20940",
-    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#ca4e33839dda3fedc8b909da43f745b1912c1aed"
+    "fastfile": "git+https://github.com/iden3/fastfile.git#07ea279c676de9ec7f19929ab1215d2c18da838b",
+    "ffjavascript": "git+https://github.com/iden3/ffjavascript.git#27a93c3f382845b573b66f9eb52cd3f6ff41dffb"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5",
